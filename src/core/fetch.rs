@@ -57,7 +57,30 @@ pub fn dump_cache(cache_data: &ArxivCollection, config: &Config) -> Result<()> {
 /// let arxivs = fetch_arxivs(query).await?;
 /// ```
 pub async fn fetch_arxivs(query: ArxivQuery, client: &Client) -> Result<Vec<Arxiv>> {
-    let body = client.get(query.to_url()).send().await?.text().await?;
+    let resp = client.get(query.to_url()).send().await?;
+
+    // Check HTTP status code
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        anyhow::bail!(
+            "Arxiv API returned HTTP {}: {}",
+            status,
+            &body[..body.len().min(500)]
+        );
+    }
+
+    let body = resp.text().await?;
+
+    // Validate that the response is XML (not an HTML error page)
+    let trimmed = body.trim_start();
+    if !trimmed.starts_with("<?xml") && !trimmed.starts_with("<feed") {
+        anyhow::bail!(
+            "Arxiv API returned non-XML response (first 200 chars): {}",
+            &trimmed[..trimmed.len().min(200)]
+        );
+    }
+
     let arxivs = parse_data(body)?;
     Ok(arxivs)
 }

@@ -4,7 +4,7 @@ use super::structs::{ArxivQuery, ArxivQueryBuilder};
 impl ArxivQueryBuilder {
     pub fn new() -> Self {
         ArxivQueryBuilder {
-            base_url: "http://export.arxiv.org/api/query?".to_string(),
+            base_url: "https://export.arxiv.org/api/query?".to_string(),
             ..ArxivQueryBuilder::default()
         }
     }
