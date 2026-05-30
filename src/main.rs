@@ -26,7 +26,20 @@ async fn main() -> Result<()> {
     let today = Utc::now();
     let cache_day = today - Duration::days(std::cmp::max(config.limit_days, 1));
 
+    // Re-group cached data by date (merge entries with different timestamps on the same day)
     let mut raw_data: ArxivCollection = from_cache(&config.cache_url, &client).await;
+    raw_data = raw_data.into_iter().fold(
+        ArxivCollection::new(),
+        |mut acc: ArxivCollection, (date, categories)| {
+            let truncated = date.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc();
+            let entry = acc.entry(truncated).or_default();
+            for (title, papers) in categories {
+                let sub = entry.entry(title).or_default();
+                sub.extend(papers);
+            }
+            acc
+        },
+    );
     for source in &config.sources {
         info!("Get: {}", source.category);
         let query = ArxivQueryBuilder::new()
