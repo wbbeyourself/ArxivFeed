@@ -38,7 +38,8 @@ async fn main() -> Result<()> {
             .build();
         let arxivs = fetch_arxivs(query, &client).await?;
         for arxiv in arxivs {
-            let date = arxiv.updated;
+            // Truncate to date-only to group papers by day, not by exact timestamp
+            let date = arxiv.updated.date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc();
             if date >= cache_day {
                 let entry = raw_data.entry(date).or_default();
                 let entry = entry.entry(String::from(&source.title)).or_default();
