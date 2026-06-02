@@ -59,6 +59,8 @@ async fn main() -> Result<()> {
                 entry.insert(arxiv);
             }
         }
+        // Respect Arxiv API rate limit: wait 3 seconds between requests
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
 
     let raw_data = raw_data
